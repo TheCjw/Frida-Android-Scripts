@@ -36,10 +36,10 @@
             onEnter: function(args) {
                 try {
                     let ptr_assembly_name = Memory.readUtf8String(args[5]);
+                    console.log(ptr_assembly_name);
                     if (ptr_assembly_name.indexOf("Assembly-CSharp.dll") != -1) {
                         this.data = args[0];
                         this.size = args[1];
-                        console.log(ptr_assembly_name);
                     }
                 } catch (e) {
                     console.log(e);

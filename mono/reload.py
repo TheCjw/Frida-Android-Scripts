@@ -16,7 +16,7 @@ def on_message(message, data):
     # print dir(message)
     # print(data)
     if message.has_key("payload"):
-        print message["payload"]
+        print(message["payload"])
 
 
 def get_process_pid(device, package_name):
@@ -28,7 +28,7 @@ def get_process_pid(device, package_name):
 
 def main():
     device = frida.get_device_manager().enumerate_devices()[-1]
-    package_name = "com.skymoons.hqg.uc"
+    package_name = "com.tencent.tmgp.sgame"
 
     # find and kill process.
     pid = get_process_pid(device, package_name)
@@ -37,7 +37,7 @@ def main():
         device.kill(pid)
         time.sleep(0.3)
 
-    os.system("adb shell am start -n {0}/{1}".format(package_name, "com.onektower.sdk.tgame.SplashActivity"))
+    os.system("adb shell am start -n {0}/{1}".format(package_name, "com.tencent.tmgp.sgame.SGameActivity"))
     time.sleep(0.2)
 
     pid = get_process_pid(device, package_name)
