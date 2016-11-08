@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Firda-Android-Script.iml" filepath="$PROJECT_DIR$/.idea/Firda-Android-Script.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Frida-Android-Scripts.iml" filepath="$PROJECT_DIR$/.idea/Frida-Android-Scripts.iml" />
     </modules>
   </component>
 </project>

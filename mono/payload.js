@@ -1,16 +1,11 @@
-(function() {
+(function () {
     "use strict";
-
-    // Copy from https://stackoverflow.com/questions/951021/what-do-i-do-if-i-want-a-javascript-version-of-sleep
-    function sleep(time) {
-        return new Promise((resolve) => setTimeout(resolve, time));
-    }
 
     // Waiting for libmono loading.
 
     var libmono_base = null;
     while (true) {
-        sleep(100);
+        Thread.sleep(0.1);
         libmono_base = Module.findBaseAddress("libmono.so");
         if (libmono_base != null) {
             break;
@@ -28,12 +23,13 @@
     // gboolean metadata_only,
     // const char *name)
     var func_mono_image_open_from_data_with_name = new NativeFunction(
-        Module.findExportByName("libmono.so", "mono_image_open_from_data_with_name"), "pointer", ["pointer", "uint32", "uint32", "pointer", "uint32", "uint32", "pointer"]);
+        Module.findExportByName("libmono.so", "mono_image_open_from_data_with_name"),
+        "pointer", ["pointer", "uint32", "uint32", "pointer", "uint32", "uint32", "pointer"]);
     console.log("mono_image_open_from_data_with_name: " + func_mono_image_open_from_data_with_name);
 
     try {
         Interceptor.attach(func_mono_image_open_from_data_with_name, {
-            onEnter: function(args) {
+            onEnter: function (args) {
                 try {
                     let ptr_assembly_name = Memory.readUtf8String(args[5]);
                     console.log(ptr_assembly_name);
@@ -45,7 +41,7 @@
                     console.log(e);
                 }
             },
-            onLeave: function(retval) {
+            onLeave: function (retval) {
                 try {
                     if (this.data != null) {
                         console.log(this.data + " " + this.size);
