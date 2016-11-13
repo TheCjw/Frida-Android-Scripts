@@ -93,6 +93,8 @@ def main():
         try:
             session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
             script_content = open(script_file).read()
+            # Update some consts.
+            script_content = script_content.replace("__PACKAGE_NAME__", package_name)
             script = session.create_script(script_content)
             script.on("message", on_message)
             script.load()
