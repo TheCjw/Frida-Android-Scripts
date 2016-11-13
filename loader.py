@@ -61,6 +61,9 @@ def main():
         script_file = args.script
         package_name = args.package
 
+        if os.path.isabs(script_file) is False:
+            script_file = os.path.abspath(script_file)
+
         device = frida.get_device_manager().enumerate_devices()[-1]
 
         pid = get_process_pid(device, package_name)
