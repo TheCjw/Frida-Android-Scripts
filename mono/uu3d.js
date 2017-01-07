@@ -1,11 +1,11 @@
-(function () {
+(function() {
     "use strict";
 
     // Copy from http://stackoverflow.com/a/4673436/3026513
     if (!String.prototype.format) {
-        String.prototype.format = function () {
+        String.prototype.format = function() {
             var args = arguments;
-            return this.replace(/{(\d+)}/g, function (match, number) {
+            return this.replace(/{(\d+)}/g, function(match, number) {
                 return typeof args[number] != 'undefined' ?
                     args[number] :
                     match;
@@ -42,7 +42,7 @@
             // gboolean refonly,
             // gboolean metadata_only,
             // const char *name)
-            onEnter: function (args) {
+            onEnter: function(args) {
                 try {
 
                     this.data = args[0];
@@ -52,7 +52,7 @@
                     console.log("[-] onEnter failed, {0}".format(e));
                 }
             },
-            onLeave: function (retval) {
+            onLeave: function(retval) {
                 // TODO: check retval.
                 try {
                     if (this.data !== null) {
@@ -64,6 +64,13 @@
                         out.write(Memory.readByteArray(this.data, this.size.toInt32()));
                         out.close();
                         console.log("[*] Saved to {0}".format(output_path));
+
+                        console.log(hexdump(this.data, {
+                            offset: 0,
+                            length: 0x30,
+                            header: true,
+                            ansi: true
+                        }));
                     }
                 } catch (e) {
                     console.log("[-] onLeave failed, {0}".format(e));
