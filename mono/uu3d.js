@@ -67,10 +67,6 @@
 
             let output_path = "{0}/{1}".format(APP_FILES_PATH, file_name);
             console.log("[*] Found .Net assembly {0}, at {1} - {2}".format(file_name, this.data, this.size));
-            var out = new File(output_path, "wb");
-            out.write(Memory.readByteArray(this.data, this.size.toInt32()));
-            out.close();
-            console.log("[*] Saved to {0}\n".format(output_path));
 
             console.log(hexdump(this.data, {
               offset: 0,
@@ -78,6 +74,13 @@
               header: true,
               ansi: true
             }));
+            
+            var out = new File(output_path, "wb");
+            out.write(Memory.readByteArray(this.data, this.size.toInt32()));
+            out.close();
+            console.log("[*] Saved to {0}\n".format(output_path));
+
+            
           }
         } catch (e) {
           console.log("[-] onLeave failed, {0}".format(e));
