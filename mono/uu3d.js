@@ -54,16 +54,23 @@
       },
       onLeave: function (retval) {
         // TODO: check retval.
+        
         try {
           if (this.data !== null) {
-            // FIXME: assembly_name can be nullptr.
-            let file_name = this.assembly_name.split("/").pop();
+            let file_name = "";
+            if (this.assembly_name === null) {
+              // use size as suffix .
+              file_name = "noname_{0}.dll".format(this.size);
+            } else {
+              file_name = this.assembly_name.split("/").pop();
+            }
+
             let output_path = "{0}/{1}".format(APP_FILES_PATH, file_name);
             console.log("[*] Found .Net assembly {0}, at {1} - {2}".format(file_name, this.data, this.size));
             var out = new File(output_path, "wb");
             out.write(Memory.readByteArray(this.data, this.size.toInt32()));
             out.close();
-            console.log("[*] Saved to {0}".format(output_path));
+            console.log("[*] Saved to {0}\n".format(output_path));
 
             console.log(hexdump(this.data, {
               offset: 0,
