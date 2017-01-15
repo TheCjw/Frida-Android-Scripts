@@ -57,7 +57,7 @@
         
         try {
           if (this.data !== null) {
-            let file_name = "";
+            var file_name = "";
             if (this.assembly_name === null) {
               // use size as suffix .
               file_name = "noname_{0}.dll".format(this.size);
@@ -65,7 +65,7 @@
               file_name = this.assembly_name.split("/").pop();
             }
 
-            let output_path = "{0}/{1}".format(APP_FILES_PATH, file_name);
+            var output_path = "{0}/{1}".format(APP_FILES_PATH, file_name);
             console.log("[*] Found .Net assembly {0}, at {1} - {2}".format(file_name, this.data, this.size));
 
             console.log(hexdump(this.data, {
