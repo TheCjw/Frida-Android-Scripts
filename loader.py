@@ -5,12 +5,23 @@
 
 __author__ = "TheCjw"
 
-import os
 import argparse
-import time
+import os
+import platform
+import subprocess
 import sys
+import time
 
 import frida
+
+
+def script_suffix():
+    build_os = platform.system().lower()
+    return ".cmd" if build_os == 'windows' else ""
+
+
+def node_script_path(name):
+    return os.path.abspath(os.path.join(sys.path[0], "node_modules", ".bin", name + script_suffix()))
 
 
 def parse_args():
@@ -92,7 +103,12 @@ def main():
         session = None
         try:
             session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
-            script_content = open(script_file).read()
+            # Using frida-compile convert ES6 script to ES5 script
+            out_path = os.path.join(os.path.dirname(__file__), "out")
+            generated_file = os.path.join(out_path, os.path.basename(script_file))
+            subprocess.check_call([node_script_path("frida-compile"), script_file, "-o", generated_file], cwd=os.getcwd())
+
+            script_content = open(generated_file).read()
             # Update some consts.
             script_content = script_content.replace("__PACKAGE_NAME__", package_name)
             script = session.create_script(script_content)

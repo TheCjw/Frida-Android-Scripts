@@ -1,0 +1,14 @@
+{
+  "browserify": {
+    "transform": [
+      [
+        "babelify",
+        {
+          "presets": [
+            ["es2015", { "loose": true }]
+          ]
+        }
+      ]
+    ]
+  }
+}
