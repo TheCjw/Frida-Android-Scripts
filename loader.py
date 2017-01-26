@@ -81,9 +81,9 @@ def main():
         if pid != -1:
             print("[+] killing {0}".format(pid))
             device.kill(pid)
+            # Pause for 3s.
             time.sleep(0.3)
 
-        # Pause for 3s.
         os.system(r"adb shell su -c \"echo 4 > /data/data/{0}/files/.pause\"".format(package_name))
         os.system(r"adb shell monkey -p {0} -c android.intent.category.LAUNCHER 1".format(package_name))
 

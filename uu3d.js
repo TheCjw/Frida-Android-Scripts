@@ -78,8 +78,6 @@ try {
           out.write(Memory.readByteArray(this.data, this.size.toInt32()));
           out.close();
           console.log("[*] Saved to {0}\n".format(output_path));
-
-
         }
       } catch (e) {
         console.log("[-] onLeave failed, {0}".format(e));
