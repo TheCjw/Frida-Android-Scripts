@@ -75,6 +75,16 @@ def main():
         if os.path.isabs(script_file) is False:
             script_file = os.path.abspath(script_file)
 
+        # Using frida-compile convert ES6 script to ES5 script
+        print("[+] Compiling javascript files.")
+        out_path = os.path.join(os.path.dirname(__file__), "out")
+        generated_file = os.path.join(out_path, os.path.basename(script_file))
+        subprocess.check_call([node_script_path("frida-compile"), script_file, "-o", generated_file], cwd=os.getcwd())
+        
+        script_content = open(generated_file).read()
+        # Update some consts here.
+        script_content = script_content.replace("__PACKAGE_NAME__", package_name)
+
         device = frida.get_device_manager().enumerate_devices()[-1]
 
         pid = get_process_pid(device, package_name)
@@ -103,14 +113,7 @@ def main():
         session = None
         try:
             session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
-            # Using frida-compile convert ES6 script to ES5 script
-            out_path = os.path.join(os.path.dirname(__file__), "out")
-            generated_file = os.path.join(out_path, os.path.basename(script_file))
-            subprocess.check_call([node_script_path("frida-compile"), script_file, "-o", generated_file], cwd=os.getcwd())
-
-            script_content = open(generated_file).read()
-            # Update some consts.
-            script_content = script_content.replace("__PACKAGE_NAME__", package_name)
+           
             script = session.create_script(script_content)
             script.on("message", on_message)
             script.load()
