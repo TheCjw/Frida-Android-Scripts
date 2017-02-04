@@ -2,10 +2,8 @@
 
 require("./lib/common");
 
-console.log("[*] Frida {0} on {1}".format(Frida.version, Process.arch));
-
 const PACKAGE_NAME = "__PACKAGE_NAME__";
-const APP_FILES_PATH = "/data/data/{0}/files".format(PACKAGE_NAME);
+const APP_FILES_PATH = `/data/data/${PACKAGE_NAME}/files`;
 
 try {
 
@@ -44,8 +42,7 @@ try {
               if (!range.file) {
                 _listener.detach();
                 console.log("[*] Phase 2 starting...");
-                console.log("[*] Internal libjiagu.so range: {0} - {1}".format(
-                  range.base, range.size.toString(0x10)));
+                console.log(`[*] Internal libjiagu.so range: ${range.base} - ${range.size.toString(0x10)}`);
 
                 Memory.protect(range.base, range.size, "rwx");
 
@@ -108,7 +105,7 @@ try {
             this.source = args[2];
             this.sourceLen = args[3];
 
-            console.log("[*] libz#uncompress is calling from {0}({1}).".format(this.returnAddress, module.name));
+            console.log(`[*] libz#uncompress is calling from ${this.returnAddress}(${module.name}).`);
           },
           onLeave: function (retval) {
 
@@ -120,8 +117,8 @@ try {
               return;
 
             let destLen = Memory.readULong(this.destLen);
-            console.log("[*] dest/destLen: {0}, {1}".format(this.dest, destLen.toString(0x10)));
-            console.log("[*] source/sourceLen: {0}, {1}".format(this.source, this.sourceLen));
+            console.log(`[*] dest/destLen: ${this.dest}, ${destLen.toString(0x10)}`);
+            console.log(`[*] source/sourceLen: ${this.source}, ${this.sourceLen}`);
 
             console.log(hexdump(this.dest, {
               offset: 0,
@@ -130,11 +127,11 @@ try {
               ansi: true
             }));
 
-            let output_path = "{0}/{1}".format(APP_FILES_PATH, "unpacked_libjiagu.so");
+            let output_path = `${APP_FILES_PATH}/unpacked_libjiagu.so`;
             let out = new File(output_path, "wb");
             out.write(Memory.readByteArray(this.dest, destLen));
             out.close();
-            console.log("[*] Save uncompressed so to {0}.".format(output_path));
+            console.log(`[*] Save uncompressed so to ${output_path}.`);
 
             _listener.detach();
 
@@ -152,6 +149,6 @@ try {
   // Phase 1 start.
   libz_uncompress_hook.attach();
 
-} catch (error) {
-  console.log(error);
+} catch (e) {
+  console.log(`[-] Exception: ${e}`);
 }

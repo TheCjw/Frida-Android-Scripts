@@ -5,7 +5,7 @@ require("./lib/common");
 console.log("[*] Ultimate Unity3D DLLs Dumper");
 
 const PACKAGE_NAME = "__PACKAGE_NAME__";
-const APP_FILES_PATH = "/data/data/{0}/files".format(PACKAGE_NAME);
+const APP_FILES_PATH = `/data/data/${PACKAGE_NAME}/files`;
 
 try {
   const LIBMONO = "libmono.so";
@@ -38,7 +38,7 @@ try {
         this.size = args[1];
         this.assembly_name = Memory.readUtf8String(args[5]);
       } catch (e) {
-        console.log("[-] onEnter failed, {0}".format(e));
+        console.log(`[-] onEnter failed, {e}`);
       }
     },
     onLeave: function (retval) {
@@ -49,13 +49,13 @@ try {
           let file_name = "";
           if (this.assembly_name === null) {
             // use size as suffix .
-            file_name = "noname_{0}.dll".format(this.size);
+            file_name = `noname_${this.size}.dll`;
           } else {
             file_name = this.assembly_name.split("/").pop();
           }
 
-          let output_path = "{0}/{1}".format(APP_FILES_PATH, file_name);
-          console.log("[*] Found .Net assembly {0}, at {1} - {2}".format(file_name, this.data, this.size));
+          let output_path = `${APP_FILES_PATH}/${file_name}`;
+          console.log(`[*] Found .Net assembly ${file_name}, at ${this.data} - ${this.size}`);
 
           console.log(hexdump(this.data, {
             offset: 0,
@@ -67,14 +67,14 @@ try {
           let out = new File(output_path, "wb");
           out.write(Memory.readByteArray(this.data, this.size.toInt32()));
           out.close();
-          console.log("[*] Saved to {0}\n".format(output_path));
+          console.log(`[*] Saved to ${output_path}\n`);
         }
       } catch (e) {
-        console.log("[-] onLeave failed, {0}".format(e));
+        console.log(`[-] onLeave failed, ${e}`);
       }
     }
   });
 
-} catch (error) {
-  console.log(error);
+} catch (e) {
+  console.log(`[-] Exception: ${e}`);
 }

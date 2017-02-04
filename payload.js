@@ -2,4 +2,4 @@
 
 require("./lib/common");
 
-console.log("[*] Frida {0} on {1}".format(Frida.version, Process.arch));
+console.log(`[*] Frida ${Frida.version} on ${Process.arch}`);
