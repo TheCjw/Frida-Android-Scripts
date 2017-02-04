@@ -1,6 +1,6 @@
 "use strict";
 
-require("./common/common");
+require("./lib/common");
 
 console.log("[*] Frida {0} on {1}".format(Frida.version, Process.arch));
 

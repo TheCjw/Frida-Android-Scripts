@@ -1,6 +1,6 @@
 "use strict";
 
-require("./common/common");
+require("./lib/common");
 
 console.log("[*] Ultimate Unity3D DLLs Dumper");
 
