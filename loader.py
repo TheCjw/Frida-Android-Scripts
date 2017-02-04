@@ -81,7 +81,7 @@ def main():
         generated_file = os.path.join(out_path, os.path.basename(script_file))
         subprocess.check_call([node_script_path("frida-compile"), script_file, "-o", generated_file], cwd=os.getcwd())
         
-        script_content = open(generated_file).read()
+        script_content = open(generated_file, encoding="utf-8").read()
         # Update some consts here.
         script_content = script_content.replace("__PACKAGE_NAME__", package_name)
 

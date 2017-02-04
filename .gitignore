@@ -248,3 +248,5 @@ jspm_packages
 # Spyder project settings
 
 # Rope project settings
+
+.vscode/
