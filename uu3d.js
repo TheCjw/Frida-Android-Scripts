@@ -1,16 +1,6 @@
 "use strict";
 
-// Copy from http://stackoverflow.com/a/4673436/3026513
-if (!String.prototype.format) {
-  String.prototype.format = function () {
-    let args = arguments;
-    return this.replace(/{(\d+)}/g, function (match, number) {
-      return typeof args[number] != 'undefined' ?
-        args[number] :
-        match;
-    });
-  };
-}
+require("./common/common");
 
 console.log("[*] Ultimate Unity3D DLLs Dumper");
 

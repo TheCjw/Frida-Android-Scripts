@@ -1,16 +1,6 @@
 "use strict";
 
-// Copy from http://stackoverflow.com/a/4673436/3026513
-if (!String.prototype.format) {
-  String.prototype.format = function () {
-    var args = arguments;
-    return this.replace(/{(\d+)}/g, function (match, number) {
-      return typeof args[number] != 'undefined' ?
-        args[number] :
-        match;
-    });
-  };
-}
+require("./common/common");
 
 console.log("[*] Frida {0} on {1}".format(Frida.version, Process.arch));
 
@@ -22,29 +12,16 @@ try {
   const LIBJIAGU = "libjiagu";
   const LIBZ = "libz.so";
   const LIBC = "libc.so";
-
-  const allocated_address = [];
-  var current_stage = 0;
-
-  const isCallFromAllocatedMemory = function (address) {
-    try {
-      Process.findModuleByAddress(address);
-      return false;
-    } catch (error) {
-      return true;
-    }
-  };
+  const LIBART = "libart.so";
 
   var libc_mmap_hook = (function () {
-    const libc_mmap = Module.findExportByName(LIBC, "mmap");
+    const _address = Module.findExportByName(LIBC, "mmap");
     var _listener = null;
 
     return {
       attach: function () {
-        _listener = Interceptor.attach(libc_mmap, {
-          onLeave: function (retval) {
-            allocated_address.push(retval.toString());
-          }
+        _listener = Interceptor.attach(_address, {
+          onLeave: function (retval) {}
         });
       },
       detach: function () {
@@ -54,54 +31,29 @@ try {
   })();
 
   var libc_gettimeofday_hook = (function () {
-    const libc_gettimeofday = Module.findExportByName(LIBC, "gettimeofday");
+    const _address = Module.findExportByName(LIBC, "gettimeofday");
     var _listener = null;
 
     return {
       attach: function () {
-        _listener = Interceptor.attach(libc_gettimeofday, {
-          onLeave: function (retval) {
-            if (!isCallFromAllocatedMemory())
-              return;
+        _listener = Interceptor.attach(_address, {
+          onEnter: function (args) {
+            try {
+              let range = Process.findRangeByAddress(this.returnAddress);
 
-            switch (current_stage) {
-              case 0:
-                libc_mmap_hook.attach();
-                current_stage = 1;
-                break;
+              if (!range.file) {
+                _listener.detach();
+                console.log("[*] Phase 2 starting...");
+                console.log("[*] Internal libjiagu.so range: {0} - {1}".format(
+                  range.base, range.size.toString(0x10)));
 
-              case 1:
-                if (allocated_address.length === 0)
-                  break;
+                Memory.protect(range.base, range.size, "rwx");
 
-                libc_mmap_hook.detach();
-                libc_gettimeofday_hook.detach();
+                // TODO: 
+              }
 
-                current_stage = 2; // 
-
-                console.log("[*] Finished, with {0} address log.".format(allocated_address.length));
-
-                allocated_address.forEach(function (address) {
-                  try {
-                    let p = new NativePointer(address);
-                    if (Memory.readU32(p) === 0)
-                      return;
-
-                    console.log(hexdump(p, {
-                      offset: 0,
-                      length: 0x30,
-                      header: true,
-                      ansi: true
-                    }));
-                  } catch (error) {
-                    // Ignore invalid ptr.
-                  }
-                });
-
-                break;
-
-              default:
-                break;
+            } catch (error) {
+              //
             }
           }
         });
@@ -112,23 +64,40 @@ try {
     };
   })();
 
+  var libc_open_hook = (function () {
+    const _address = Module.findExportByName(LIBC, "open");
+    var _listener = null;
+
+    return {
+      attach: function () {
+        _listener = Interceptor.attach(_address, {
+          onEnter: function (args) {
+            // let path = Memory.readUtf8String(args[0]);
+          },
+          onLeave: function (retval) {}
+        });
+      },
+      detach: function () {
+        _listener.detach();
+      }
+    };
+  })();
+
   var libz_uncompress_hook = (function () {
-    const libz_uncompress = Module.findExportByName(LIBZ, "uncompress");
+    const _address = Module.findExportByName(LIBZ, "uncompress");
     var _listener = null;
 
     return {
       attach: function () {
         /*
         ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
-                                   const Bytef *source, uLong sourceLen));
+                                          const Bytef *source, uLong sourceLen));
         */
-        _listener = Interceptor.attach(libz_uncompress, {
+        _listener = Interceptor.attach(_address, {
           onEnter: function (args) {
 
-            let caller = this.returnAddress.sub(1);
-            let module = Process.getModuleByAddress(caller);
-
-            this.is_call_from_libjiagu = module.name.indexOf(LIBJIAGU) !== -1;
+            let module = Process.getModuleByAddress(this.returnAddress);
+            this.is_call_from_libjiagu = module.name.startsWith(LIBJIAGU);
 
             if (!this.is_call_from_libjiagu)
               return;
@@ -139,11 +108,7 @@ try {
             this.source = args[2];
             this.sourceLen = args[3];
 
-            console.log("[*] libz#uncompress is calling from {0}({1}).".format(caller, module.name));
-
-            // Arch64 infinite loop
-            // Memory.protect(module.base.add(0x5264), 4096, 'rwx');
-            // Memory.writeUInt(module.base.add(0x5264), 0x14000000);
+            console.log("[*] libz#uncompress is calling from {0}({1}).".format(this.returnAddress, module.name));
           },
           onLeave: function (retval) {
 
