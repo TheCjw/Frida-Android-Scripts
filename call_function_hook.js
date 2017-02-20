@@ -21,9 +21,13 @@ require("./lib/common");
       // void soinfo::call_function(const char* function_name __unused, linker_function_t function) {
       onEnter: function (args) {
         this.function_address = args[2];
+        if (!this.function_address)
+          return;
+
         let range = Process.findRangeByAddress(this.function_address);
         // range.file would not be null.
         console.log(`[*] Calling ${this.function_address} at ${range.file.path}`);
+
         // TODO:
         //  - Patch function_address to infinite loop then use IDA Pro to attach.
       },
