@@ -9,17 +9,21 @@ require("./lib/common");
   const PACKAGE_NAME = "__PACKAGE_NAME__";
   const APP_FILES_PATH = `/data/data/${PACKAGE_NAME}/files`;
 
-  const call_function_symbol = "__dl__ZN6soinfo13call_functionEPKcPFvvE";
-  let call_function_ptr = DebugSymbol.getFunctionByName(call_function_symbol);
+  const adjustFunctionAddress = function (address) {
+    // Check thumb mode or ARM mode.
+    try {
+      // Still unstable.
+      Instruction.parse(address);
+    } catch (e) {
+      // Thumb mode here.
+      address = address.add(1);
+    }
+    return address;
+  };
 
-  // Check thumb mode or ARM mode.
-  try {
-    // Still unstable.
-    Instruction.parse(call_function_ptr);
-  } catch (e) {
-    // Thumb mode here.
-    call_function_ptr = call_function_ptr.add(1);
-  }
+  const call_function_symbol = "__dl__ZN6soinfo13call_functionEPKcPFvvE";
+  let call_function_ptr = adjustFunctionAddress(
+    DebugSymbol.getFunctionByName(call_function_symbol));
 
   console.log(`[*] Found ${call_function_symbol} at ${call_function_ptr}`);
 
