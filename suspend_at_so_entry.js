@@ -9,17 +9,21 @@ require("./lib/common");
   const PACKAGE_NAME = "__PACKAGE_NAME__";
   const APP_FILES_PATH = `/data/data/${PACKAGE_NAME}/files`;
 
-  const call_function_symbol = "__dl__ZN6soinfo13call_functionEPKcPFvvE";
-  let call_function_ptr = DebugSymbol.getFunctionByName(call_function_symbol);
+  const adjustFunctionAddress = function (address) {
+    // Check thumb mode or ARM mode.
+    try {
+      // Still unstable.
+      Instruction.parse(address);
+    } catch (e) {
+      // Thumb mode here.
+      address = address.add(1);
+    }
+    return address;
+  };
 
-  // Check thumb mode or ARM mode.
-  try {
-    // Still unstable.
-    Instruction.parse(call_function_ptr);
-  } catch (e) {
-    // Thumb mode here.
-    call_function_ptr = call_function_ptr.add(1);
-  }
+  const call_function_symbol = "__dl__ZN6soinfo13call_functionEPKcPFvvE";
+  let call_function_ptr = adjustFunctionAddress(
+    DebugSymbol.getFunctionByName(call_function_symbol));
 
   console.log(`[*] Found ${call_function_symbol} at ${call_function_ptr}`);
 
@@ -35,12 +39,12 @@ require("./lib/common");
       // range.file would not be null.
 
       // Tested On TXLegu, ARM mode arm32 lib.
-      // if (range.file.path.indexOf("libshella") === -1)
-      //   return;
+      if (range.file.path.indexOf("libshella") === -1)
+         return;
 
       // Tested On Ijiami, Thumb mode arm32 lib.
-      if (range.file.path.indexOf("libexec") === -1)
-        return;
+      // if (range.file.path.indexOf("libexec") === -1)
+      //   return;
 
       try {
 
@@ -61,10 +65,10 @@ require("./lib/common");
 
         console.log(`[*] Restore func(${this.function_address}) header with IDAPython:\n` +
           `    PatchDword(GetRegValue("PC"), 0x${Memory.readU32(patch_address).toString(0x10)})`);
-        
+
         Memory.protect(patch_address, Process.pageSize, "rwx");
         Memory.writeByteArray(patch_address, infinite_loop_bytes);
-        
+
         Interceptor.detachAll();
 
         console.log(`[*] Finished. Attach with IDAPro and continue.`);
