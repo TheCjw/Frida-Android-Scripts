@@ -76,9 +76,6 @@ require("./lib/common");
       };
     })();
 
-    /**
-     * Yeah, I found this function, finally.
-     */
     let libart_OpenMemory_hook = (function () {
       const _address = Module.findExportByName(LIBART, "_ZN3art7DexFile10OpenMemoryEPKhjRKNSt3__112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEEjPNS_6MemMapEPKNS_10OatDexFileEPS9_");
       let _listener = null;
@@ -105,14 +102,20 @@ require("./lib/common");
               // Tested on 32bit System only, std::string + 8 = raw_string.
               let location = Memory.readUtf8String(
                 Memory.readPointer(std_str_location.add(0x2 * POINTER_SIZE)));
-              
-              // 
+
               if (location.indexOf(PACKAGE_NAME) === -1) {
-                console.log(`[-] Not dynamic loaded dex, ignore.`);
+                console.log(`[-] Not dynamic loaded dex(${location}), ignore.`);
                 return;
               }
 
               console.log(`[*] Loading dex from ${location}`);
+              console.log(`[*] base ${base}, size ${size.toString(0x10)}, checksum ${args[4]}`);
+              console.log(hexdump(base, {
+                offset: 0,
+                length: 0x20,
+                header: true,
+                ansi: true
+              }));
 
               writeDexToFile(base);
             },
