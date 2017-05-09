@@ -41,10 +41,10 @@ require("./lib/common");
           "declaring_class_": Memory.readPointer(Memory.readPointer(artMethod.add(Process.pointerSize * 0))),
           "dex_cache_resolved_methods_": Memory.readPointer(artMethod.add(Process.pointerSize * 1)),
           "dex_cache_resolved_types_": Memory.readPointer(artMethod.add(Process.pointerSize * 2)),
-          "access_flags_": Memory.readPointer(artMethod.add(Process.pointerSize * 3)),
-          "dex_code_item_offset_": Memory.readPointer(artMethod.add(Process.pointerSize * 4)),
-          "dex_method_index_": Memory.readPointer(artMethod.add(Process.pointerSize * 5)),
-          "method_index_": Memory.readPointer(artMethod.add(Process.pointerSize * 6)),
+          "access_flags_": Memory.readUInt(artMethod.add(Process.pointerSize * 3)),
+          "dex_code_item_offset_": Memory.readUInt(artMethod.add(Process.pointerSize * 4)),
+          "dex_method_index_": Memory.readUInt(artMethod.add(Process.pointerSize * 5)),
+          "method_index_": Memory.readUInt(artMethod.add(Process.pointerSize * 6)),
           "entry_point_from_interpreter_": Memory.readPointer(artMethod.add(Process.pointerSize * 7)),
           "entry_point_from_jni_": Memory.readPointer(artMethod.add(Process.pointerSize * 8)),
           "entry_point_from_quick_compiled_code_": Memory.readPointer(artMethod.add(Process.pointerSize * 9)),
@@ -52,7 +52,7 @@ require("./lib/common");
 
         let r1 = Process.findRangeByAddress(native_method);
         let offset = native_method.sub(r1.base);
-        console.log(`[*] Register ${artMethod} to ${native_method}, offset : ${offset}`);
+        console.log(`[*] Register ${artMethod} to ${native_method}, offset ${offset}, id ${method["dex_method_index_"]}`);
       }
     },
     onLeave: function (retval) {}
