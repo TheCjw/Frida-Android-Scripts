@@ -53,6 +53,7 @@ class MyArgParser(object):
 """.format(os.path.basename(__file__)))
 
         parser.add_argument("command", help="Subcommand to run")
+        # TODO: Add subcommand help.
 
         if len(sys.argv) == 1:
             parser.print_help()
@@ -68,6 +69,11 @@ class MyArgParser(object):
 
     @staticmethod
     def __node_script_path__(name):
+        """
+        get node.js module from dev dir.
+        :param name:
+        :return:
+        """
         build_os = platform.system().lower()
         suffix = ".cmd" if build_os == "windows" else ""
         return os.path.abspath(os.path.join(sys.path[0], "node_modules",
@@ -75,22 +81,50 @@ class MyArgParser(object):
 
     @staticmethod
     def __get_application_name__(device, identifier):
+        """
+        :param device:
+        :param identifier:
+        :return:
+        """
         for p in device.enumerate_applications():
             if p.identifier == identifier:
                 return p.name
 
     @staticmethod
     def __get_process_pid__(device, application_name):
+        """
+        :param device:
+        :param application_name:
+        :return:
+        """
         for p in device.enumerate_processes():
             if p.name == application_name:
                 return p.pid
         return -1
 
+    @staticmethod
+    def __start_session__(pid, script_content):
+        """
+        :return:
+        """
+        session = None
+        try:
+            session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
+            script = session.create_script(script_content)
+            script.load()
+            sys.stdin.read()
+        except KeyboardInterrupt:
+            if session is not None:
+                session.detach()
+            logger.error("user aborted")
+
+        print("[*] Shutting down at {0}".format(datetime.now().strftime("%H:%M:%S")))
+
     def __compile_javascript__(self, src, dst):
         """
         Using frida-compile convert ES6 script to ES5 script
-        :param script_path:
-        :param output_path:
+        :param src:
+        :param dst:
         :return:
         """
         logger.info("Compiling {0} file with frida-compile.".format(os.path.basename(src)))
@@ -98,6 +132,11 @@ class MyArgParser(object):
                               cwd=os.getcwd())
 
     def __run_and_inject__(self, package_name, script_path):
+        """
+        :param package_name:
+        :param script_path:
+        :return:
+        """
         print("[*] Staring at {0}".format(datetime.now().strftime("%H:%M:%S")))
 
         if os.path.isabs(script_path) is False:
@@ -111,7 +150,6 @@ class MyArgParser(object):
         # Update some consts here.
         script_content = script_content.replace("__PACKAGE_NAME__", package_name)
 
-        # FIXME: add iOS support sometime.
         device = frida.get_device_manager().enumerate_devices()[-1]
 
         # Kill running package.
@@ -142,18 +180,7 @@ class MyArgParser(object):
         logger.info("Injecting {0} to {1}({2})".format(os.path.basename(script_path),
                                                        package_name, pid))
 
-        session = None
-        try:
-            session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
-            script = session.create_script(script_content)
-            script.load()
-            sys.stdin.read()
-        except KeyboardInterrupt:
-            if session is not None:
-                session.detach()
-            logger.error("user aborted")
-
-        print("[*] Shutting down at {0}".format(datetime.now().strftime("%H:%M:%S")))
+        MyArgParser.__start_session__(pid, script_content)
 
     def run(self):
         """
@@ -174,6 +201,26 @@ class MyArgParser(object):
                             required=True)
         args = parser.parse_args(sys.argv[2:])
         self.__run_and_inject__(args.package, args.script)
+
+    def inject(self):
+        """
+        Inject a frida script to a running process.
+        :return:
+        """
+        parser = argparse.ArgumentParser(
+            description="Inject a frida script to a running process.")
+        parser.add_argument("-p",
+                            "--package",
+                            type=str,
+                            help="Package name of app",
+                            required=True)
+        parser.add_argument("-s",
+                            "--script",
+                            type=str,
+                            help="Script to inject",
+                            required=True)
+        args = parser.parse_args(sys.argv[2:])
+        pass
 
 
 def main():
