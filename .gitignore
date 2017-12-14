@@ -250,3 +250,5 @@ jspm_packages
 # Rope project settings
 
 .vscode/
+
+package-lock.json

@@ -17,6 +17,6 @@
     ]
   },
   "devDependencies": {
-    "frida-compile": "^5.1.0"
+    "frida-compile": "^5.2.1"
   }
 }
