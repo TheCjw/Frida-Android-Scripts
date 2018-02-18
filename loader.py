@@ -169,6 +169,7 @@ class MyArgParser(object):
                                      os.path.basename(script_path))
         self.__compile_javascript__(script_path, output_script)
         script_content = open(output_script, encoding="utf-8").read()
+        script_content = script_content.replace("__PACKAGE_NAME__", package_name)
 
         # get default process.
         device = frida.get_device_manager().enumerate_devices()[-1]
@@ -182,8 +183,11 @@ class MyArgParser(object):
                 for line in tmp:
                     pid = line.split()[1]
                     logger.info("killing {0}".format(pid))
-                    self.exec_command("adb", "shell", "su", "-c",
+                    try:
+                        self.exec_command("adb", "shell", "su", "-c",
                                       "\"kill {0}\"".format(pid))
+                    except Exception:
+                        pass
 
         self.exec_command("adb", "shell", "monkey", "-p",
                           package_name, "-c", "android.intent.category.LAUNCHER", "1")
