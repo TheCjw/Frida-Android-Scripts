@@ -81,18 +81,18 @@ class MyArgParser(object):
         _stdout, _stderr = p.communicate()
         if p.returncode != 0:
             logger.error(f"stderr:\n{_stderr.decode('utf-8')}")
-            raise RuntimeError("exec_command {0} failed.".format(args[0]))
+            raise RuntimeError(f"exec_command {args[0]} failed.")
 
         return _stdout.decode("utf-8")
 
     @staticmethod
-    def __start_session__(pid, script_content):
+    def __start_session__(device, pid, script_content):
         """
         :return:
         """
         session = None
         try:
-            session = frida.get_device_manager().enumerate_devices()[-1].attach(pid)
+            session = device.attach(pid)
             script = session.create_script(script_content)
             script.load()
             sys.stdin.read()
@@ -101,7 +101,7 @@ class MyArgParser(object):
                 session.detach()
             logger.error("user aborted")
 
-        print("[*] Shutting down at {0}".format(datetime.now().strftime("%H:%M:%S")))
+        print(f"[*] Shutting down at {datetime.now().strftime('%H:%M:%S')}")
 
     @staticmethod
     def __node_script_path__(name):
@@ -166,10 +166,7 @@ class MyArgParser(object):
         script_content = open(output_script, encoding="utf-8").read()
         script_content = script_content.replace("__PACKAGE_NAME__", package_name)
 
-        with open(output_script, "w", encoding="utf-8") as f:
-            f.write(script_content)
-
-        device = frida.get_device_manager().enumerate_devices()[-1]
+        device = frida.get_usb_device()
 
         pid = self.__get_process_pid__(device, package_name)
         if pid != -1:
@@ -187,13 +184,12 @@ class MyArgParser(object):
             time.sleep(0.05)
 
         if pid == -1:
-            logger.error("Run package {0} failed.".format(package_name))
+            logger.error(f"Run package {package_name} failed.")
             return
 
-        logger.info("Injecting {0} to {1}({2})".format(os.path.basename(script_path),
-                                                       package_name, pid))
+        logger.info(f"Injecting {os.path.basename(script_path)} to {package_name}({pid})")
 
-        os.system(f"{self.frida} -U -p {pid} -l {output_script}")
+        self.__start_session__(device, pid, script_content)
 
     def spawn(self):
         """
