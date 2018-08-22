@@ -9,6 +9,7 @@ import argparse
 import locale
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -43,18 +44,17 @@ logger.level = 10  # DEBUG
 
 class MyArgParser(object):
     def __init__(self):
-
+        self.frida = shutil.which("frida")
         self.frida_compile = self.__node_script_path__("frida-compile")
         self.temp_script_path = os.path.join(os.path.dirname(__file__), "out")
 
         parser = argparse.ArgumentParser(
             description="A frida script loader for Android/iOS app",
-            usage="""{0} <command> [<args>]
+            usage=f"""{os.path.basename(__file__)} <command> [<args>]
 
-""".format(os.path.basename(__file__)))
+""")
 
         parser.add_argument("command", help="Subcommand to run")
-        # TODO: Add subcommand help.
 
         if len(sys.argv) == 1:
             parser.print_help()
@@ -62,7 +62,7 @@ class MyArgParser(object):
 
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
-            logger.error("Unrecognized command: {0}".format(args.command))
+            logger.error(f"Unrecognized command: {args.command}")
             parser.print_help()
             sys.exit(1)
 
@@ -75,21 +75,15 @@ class MyArgParser(object):
         :param args:
         :return:
         """
-
-        def make_str(x):
-            current_os = platform.system().lower()
-            return x.decode(locale.getpreferredencoding()) if current_os == "windows" \
-                else x.decode("utf-8")
-
         p = subprocess.Popen(args,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         _stdout, _stderr = p.communicate()
         if p.returncode != 0:
-            logger.error("stderr:\n{0}".format(make_str(_stderr)))
+            logger.error(f"stderr:\n{_stderr.decode('utf-8')}")
             raise RuntimeError("exec_command {0} failed.".format(args[0]))
 
-        return make_str(_stdout)
+        return _stdout.decode("utf-8")
 
     @staticmethod
     def __start_session__(pid, script_content):
@@ -151,7 +145,7 @@ class MyArgParser(object):
         :param dst:
         :return:
         """
-        logger.info("Compiling {0} file with frida-compile.".format(os.path.basename(src)))
+        logger.info(f"Compiling {os.path.basename(src)} file with frida-compile.")
         self.exec_command(self.frida_compile, src, "-o", dst)
 
     def __spawn_and_inject__(self, package_name, script_path):
@@ -160,7 +154,7 @@ class MyArgParser(object):
         :param script_path:
         :return:
         """
-        print("[*] Staring at {0}".format(datetime.now().strftime("%H:%M:%S")))
+        print(f"[*] Staring at {datetime.now().strftime('%H:%M:%S')}")
 
         if os.path.isabs(script_path) is False:
             script_path = os.path.abspath(script_path)
@@ -168,26 +162,19 @@ class MyArgParser(object):
         output_script = os.path.join(self.temp_script_path,
                                      os.path.basename(script_path))
         self.__compile_javascript__(script_path, output_script)
+
         script_content = open(output_script, encoding="utf-8").read()
         script_content = script_content.replace("__PACKAGE_NAME__", package_name)
 
-        # get default process.
+        with open(output_script, "w", encoding="utf-8") as f:
+            f.write(script_content)
+
         device = frida.get_device_manager().enumerate_devices()[-1]
 
         pid = self.__get_process_pid__(device, package_name)
         if pid != -1:
-            tmp = self.exec_command("adb", "shell", "su", "-c",
-                                    "\"ps | grep {0}\"".format(package_name))
-            if len(tmp):
-                tmp = tmp.splitlines()
-                for line in tmp:
-                    pid = line.split()[1]
-                    logger.info("killing {0}".format(pid))
-                    try:
-                        self.exec_command("adb", "shell", "su", "-c",
-                                      "\"kill {0}\"".format(pid))
-                    except Exception:
-                        pass
+            device.kill(package_name)
+            time.sleep(0.1)
 
         self.exec_command("adb", "shell", "monkey", "-p",
                           package_name, "-c", "android.intent.category.LAUNCHER", "1")
@@ -206,7 +193,7 @@ class MyArgParser(object):
         logger.info("Injecting {0} to {1}({2})".format(os.path.basename(script_path),
                                                        package_name, pid))
 
-        MyArgParser.__start_session__(pid, script_content)
+        os.system(f"{self.frida} -U -p {pid} -l {output_script}")
 
     def spawn(self):
         """
